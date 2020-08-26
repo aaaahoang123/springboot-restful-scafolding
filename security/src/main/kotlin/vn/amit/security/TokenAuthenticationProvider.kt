@@ -9,13 +9,13 @@ import org.springframework.stereotype.Component
 
 @Component
 class TokenAuthenticationProvider(
-        @Qualifier(TOKEN_USER_DETAIL_SERVICE_BEAN_NAME) userDetailService: UserDetailsService
+        @Qualifier(TOKEN_USER_DETAIL_SERVICE) userDetailService: UserDetailsService
 ) : DaoAuthenticationProvider() {
     init {
         this.userDetailsService = userDetailService
     }
 
-    override fun additionalAuthenticationChecks(userDetails: UserDetails, authentication: UsernamePasswordAuthenticationToken?) {
-        //
+    override fun additionalAuthenticationChecks(userDetails: UserDetails, authentication: UsernamePasswordAuthenticationToken) {
+
     }
 }

@@ -1,3 +1,4 @@
-rootProject.name = "ecaf"
-include("common", "auth", "entity")
+rootProject.name = "springboot"
+include("common", "entity", "main")
+include("token")
 include("security")

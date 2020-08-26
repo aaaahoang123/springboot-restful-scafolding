@@ -1,5 +1,7 @@
 package vn.amit.common.constraint
 
+import vn.amit.common.constraint.contract.NotNullIfFieldOperator
+import vn.amit.common.constraint.validators.NotNullIfFieldValidator
 import javax.validation.Constraint
 import javax.validation.Payload
 import kotlin.reflect.KClass

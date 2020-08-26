@@ -17,23 +17,13 @@ import org.springframework.transaction.annotation.EnableTransactionManagement
 @EnableTransactionManagement(proxyTargetClass=true)
 @EnableGlobalMethodSecurity(jsr250Enabled = true, securedEnabled = true)
 class RestSecurityConfig @Autowired constructor(
-    private val provider: TokenAuthenticationProvider,
     private val entryPoint: RestSecurityEntryPoint,
     private val accessDeniedHandler: CustomAccessDeniedHandler,
-    private val failureHandler: SecurityFailureHandler
+    private val failureHandler: SecurityFailureHandler,
+    private val securityProperties: SecurityProperties
 ) : WebSecurityConfigurerAdapter() {
 
     override fun configure(http: HttpSecurity) {
-        //                .antMatchers("/",
-//                "/favicon.ico",
-//                "/**/*.png",
-//                "/**/*.gif",
-//                "/**/*.svg",
-//                "/**/*.jpg",
-//                "/**/*.html",
-//                "/**/*.css",
-//                "/**/*.js")
-//                .permitAll()
         http.sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
@@ -41,15 +31,8 @@ class RestSecurityConfig @Autowired constructor(
                 .authenticationEntryPoint(entryPoint)
                 .accessDeniedHandler(accessDeniedHandler)
                 .and()
-                .authenticationProvider(provider)
-                .addFilterBefore(
-                        TokenAuthenticationFilter(AntPathRequestMatcher("/**"), authenticationManager(), failureHandler),
-                        AnonymousAuthenticationFilter::class.java
-                )
                 .authorizeRequests()
-                .antMatchers("/guest/**")
-                .permitAll()
-                .antMatchers("/**")
+                .antMatchers(*securityProperties.getAuthenticatedResources().toTypedArray())
                 .authenticated()
                 .and()
                 .cors()
@@ -58,6 +41,14 @@ class RestSecurityConfig @Autowired constructor(
                 .formLogin().disable()
                 .httpBasic().disable()
                 .logout().disable()
+
+        securityProperties.getAuthenticatedResources()
+                .forEach {
+                    http.addFilterBefore(
+                            TokenAuthenticationFilter(AntPathRequestMatcher(it), authenticationManager(), failureHandler),
+                            AnonymousAuthenticationFilter::class.java
+                    )
+                }
 
 //        return filter
 //        http
@@ -75,6 +66,6 @@ class RestSecurityConfig @Autowired constructor(
 
     override fun configure(web: WebSecurity) {
         web.ignoring()
-                .antMatchers( "/upload/**", "/upload")
+                .antMatchers(*securityProperties.getWebIgnoreResources().toTypedArray())
     }
 }

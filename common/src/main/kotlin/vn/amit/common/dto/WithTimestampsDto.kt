@@ -4,7 +4,7 @@ import vn.amit.common.annotation.FormattedDateTime
 
 abstract class WithTimestampsDto {
     @FormattedDateTime
-    var createdDate: String? = null
+    var createdAt: String? = null
     @FormattedDateTime
-    var updatedDate: String? = null
+    var updatedAt: String? = null
 }
