@@ -14,6 +14,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.apache.commons:commons-text:1.8")
+    implementation("commons-codec:commons-codec:1.14")
     implementation("org.springframework.boot:spring-boot-starter-validation")
 }
 

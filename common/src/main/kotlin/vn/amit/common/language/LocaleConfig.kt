@@ -27,6 +27,7 @@ class LocaleConfig : WebMvcConfigurer {
     fun messageSource(): MessageSource {
         val messageSource = ReloadableResourceBundleMessageSource()
         messageSource.addBasenames(
+                "classpath:locale/common_messages",
                 "classpath:locale/messages",
                 "classpath:locale/enums",
                 "classpath:locale/ValidationMessages",

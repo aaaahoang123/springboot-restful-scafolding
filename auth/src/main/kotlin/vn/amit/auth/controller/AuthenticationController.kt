@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import vn.amit.auth.repository.AccountRepository
 import vn.amit.common.rest.RestResponse
-import vn.amit.entity.auth.Account
 
 @RestController
 @RequestMapping("accounts")

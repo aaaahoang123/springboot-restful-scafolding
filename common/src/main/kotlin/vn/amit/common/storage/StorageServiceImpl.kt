@@ -1,179 +1,141 @@
 package vn.amit.common.storage
 
-import net.bytebuddy.utility.RandomString
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.core.io.Resource
-import org.springframework.core.io.UrlResource
 import org.springframework.stereotype.Service
 import org.springframework.util.FileSystemUtils
 import org.springframework.util.StringUtils
 import org.springframework.web.multipart.MultipartFile
-import java.awt.AlphaComposite
-import java.awt.Graphics2D
-import java.awt.RenderingHints
-import java.awt.image.BufferedImage
-import java.io.FileInputStream
+import vn.amit.common.datetime.formatDateTime
+import java.io.ByteArrayInputStream
 import java.io.IOException
-import java.io.InputStream
-import java.net.MalformedURLException
+import java.net.URL
+import java.net.URLConnection
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.util.stream.Stream
-import javax.imageio.IIOImage
-import javax.imageio.ImageIO
-import javax.imageio.ImageWriteParam
-import javax.imageio.ImageWriter
-import javax.imageio.plugins.jpeg.JPEGImageWriteParam
-import javax.imageio.stream.FileImageOutputStream
+import java.nio.file.StandardCopyOption
+import java.time.LocalDateTime
 
 
 @Service
 class StorageServiceImpl @Autowired constructor(private val properties: StorageProperties) : StorageService {
-    private val rootLocation = Paths.get("${properties.staticFolder}${properties.uploadPath}")
+    private val folderLikeDateFormatter = "yyyy/MM/dd"
 
-    private fun getDirectoryPath(folder: String): Path {
-        return Paths.get("${properties.staticFolder}${properties.uploadPath}/${folder}")
+    private fun getDirectoryPath(vararg paths: String): Path {
+        return Paths.get(properties.staticFolder, properties.uploadPath, *paths)
     }
 
-    override fun store(file: MultipartFile, folder: String): String {
-        val filename = StringUtils.cleanPath(file.originalFilename!!)
-        init(folder)
-        try {
-            if (file.isEmpty) {
-                throw StorageException("failed_to_store_file", null, arrayOf(filename))
-            }
+    override fun store(file: MultipartFile, rawFolder: String): String {
+        val folder = resolveFolder(rawFolder)
+        return storeFileInternal(
+                buildFileInfo(file, folder)
+        )
+    }
 
-            val extension = filename.substring(filename.lastIndexOf(".") + 1)
-            if (!properties.acceptExtensions.contains(extension)) {
-                throw StorageException("forbidden_extension")
-            }
-            val randomName = RandomString.make(10)
-            val now = System.currentTimeMillis()
-            val trueFileName = StringUtils.cleanPath( "$randomName-$now.jpg")
+    override fun store(source: String, rawFolder: String): String {
+        val folder = resolveFolder(rawFolder)
+        val fileInfo = tryResolveAsUrl(source)?.let { buildFileInfo(it, folder) }
+                ?: tryResolveAsBase64(source)?.let { buildFileInfo(it, folder) }
+                ?: throw StorageException("file_type_not_supported")
 
-            val bufferedImage = resizeImageFromInputStream(file.inputStream, 999)
-            val writer = getImageWriter()
-            val param = getCompressImageParams(writer, 0.8f)
+        return storeFileInternal(fileInfo)
+    }
 
-            compressAndWrite(writer, bufferedImage, getDirectoryPath(folder).resolve(trueFileName), param)
-            return "${if (folder.isNotEmpty()) "$folder/" else ""}$trueFileName"
-        } catch (e: IOException) {
-            throw StorageException("failed_to_store_file", e, arrayOf(filename))
+    protected fun storeFileInternal(fileInfo: SimpleFileInfo): String {
+        if (!properties.acceptExtensions.contains(fileInfo.extension)) {
+            throw StorageException("forbidden_extension", null, arrayOf(fileInfo.extension))
         }
 
-    }
-
-    private fun resizeImageFromInputStream(inputStream: InputStream, maxWidth: Int? = null): BufferedImage {
-        val originalBufferedImage = ImageIO.read(inputStream)
-        val originalWidth = originalBufferedImage.width
-        val originalHeight = originalBufferedImage.height
-
-        var width = originalWidth
-        var height = originalHeight
-        maxWidth?.let {
-            if (width > maxWidth) {
-                height = (originalHeight.toDouble() * (it.toDouble() / width.toDouble())).toInt()
-                width = it
-            }
+        if (properties.compressibleExtensions.contains(fileInfo.extension)) {
+            return resolveCompressibleFile(fileInfo)
         }
-        val pixels = IntArray(width * height)
-
-        val bi2 = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
-        bi2.setRGB(0, 0, width, height, pixels, 0, width)
-
-        val g: Graphics2D = bi2.createGraphics()
-        g.drawImage(originalBufferedImage, 0, 0, width, height, null)
-        g.dispose()
-        g.composite = AlphaComposite.Src
-        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
-        g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY)
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-        return bi2
+        return resolveIncompressibleFile(fileInfo)
     }
 
-    private fun getCompressImageParams(writer: ImageWriter, quality: Float = 1f): ImageWriteParam {
-        val imageWriteParam = writer.defaultWriteParam
-        imageWriteParam.compressionMode = ImageWriteParam.MODE_EXPLICIT
-        imageWriteParam.compressionQuality = quality
-        return imageWriteParam
+    private fun resolveCompressibleFile(fileInfo: SimpleFileInfo): String {
+        val folder = fileInfo.folder
+        val fileName = generateRandomFileName("jpg")
+        val bufferedImage = getResizedBufferedImage(fileInfo.stream, 1000)
+        val writer = getCompressibleImageWriter()
+        val param = getCompressImageParams(writer, 0.8f)
+
+        saveImage(writer, bufferedImage, getDirectoryPath(folder, fileName), param)
+        return "${if (folder.isNotEmpty()) "$folder/" else ""}$fileName"
     }
 
-    private fun getImageWriter(): ImageWriter {
-        val iterator = ImageIO.getImageWritersByFormatName("jpg")
-        return iterator.next()
-    }
+    private fun resolveIncompressibleFile(fileInfo: SimpleFileInfo): String {
+        val folder = fileInfo.folder
 
-    private fun compressAndWrite(writer: ImageWriter, buffer: BufferedImage,  outputPath: Path, param: ImageWriteParam) {
-        val compressedImageFile = outputPath.toFile()
-        val imageOutputStream = FileImageOutputStream(compressedImageFile)
-
-//        val originalWidth: Int = bufferedImage.getWidth()
-//        val originalHeight: Int = bufferedImage.getHeight()
-//        val type = if (bufferedImage.getType() === 0) BufferedImage.TYPE_INT_ARGB else bufferedImage.getType()
-
-        //rescale 50%
-
-        //rescale 50%
-//        val resizedImage = BufferedImage(originalWidth / 2, originalHeight / 2, type)
-//        val g = resizedImage.createGraphics()
-//        g.drawImage(bufferedImage, 0, 0, originalWidth / 2, originalHeight / 2, null)
-//        g.dispose()
-//        g.composite = AlphaComposite.Src
-//        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
-//        g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY)
-//        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-//        ImageIO.write(resizedImage, "jpg", File("Lenna50.jpg"))
-
-//        val imageOutputStream = new MemoryCacheImageOutputStream(outputStream);
-        writer.output = imageOutputStream
-        val iioimage = IIOImage(buffer, null, null);
-        writer.write(null, iioimage, param);
-        imageOutputStream.flush()
-    }
-
-    override fun loadAll(): Stream<Path> {
-        try {
-            return Files.walk(this.rootLocation, 1)
-                    .filter { path -> path != this.rootLocation }
-                    .map(this.rootLocation::relativize)
-        } catch (e: IOException) {
-            throw StorageException("failed_to_read_store_file", e)
+        val filename = generateRandomFileName(fileInfo.extension)
+        fileInfo.stream.use {
+            Files.copy(it, getDirectoryPath(folder, filename),
+                    StandardCopyOption.REPLACE_EXISTING)
         }
-
-    }
-
-    override fun load(filename: String): Path {
-        return rootLocation.resolve(filename)
-    }
-
-    override fun loadAsResource(filename: String): Resource {
-        try {
-            val file = load(filename)
-            val resource = UrlResource(file.toUri())
-            return if (resource.exists() || resource.isReadable) {
-                resource
-            } else {
-                throw StorageFileNotFoundException("failed_to_read_store_file")
-            }
-        } catch (e: MalformedURLException) {
-            throw StorageFileNotFoundException("failed_to_read_store_file", e)
-        }
-
+        return "${if (folder.isNotEmpty()) "$folder/" else ""}$filename"
     }
 
     override fun deleteAll() {
-        FileSystemUtils.deleteRecursively(rootLocation.toFile())
+        FileSystemUtils.deleteRecursively(getDirectoryPath())
     }
 
-    override fun init(folder: String) {
+    override fun remove(path: String) {
         try {
+            Files.delete(getDirectoryPath(path))
+        } catch (e: IOException) {
+            throw StorageFileNotFoundException("file_not_found", null, arrayOf(path))
+        }
+    }
+
+    override fun resolveFolder(rawFolder: String): String {
+        try {
+            var folder = rawFolder
+            if (properties.dailyFolder.contains(rawFolder)) {
+                folder += "/" + formatDateTime(LocalDateTime.now(), folderLikeDateFormatter)
+            }
             val dir = getDirectoryPath(folder)
             if (!Files.exists(dir))
                 Files.createDirectories(dir)
+            return folder
         } catch (e: IOException) {
-            throw StorageException("Could not initialize storage", e)
+            throw StorageException("Can not initialize storage", e)
         }
+    }
 
+    override fun getUploadedUrl(path: String): String {
+        return "${properties.storageDomain}${properties.uploadPath}/$path"
+    }
+
+    override fun getFullPath(path: String): String {
+        return "${properties.uploadPath}/$path"
+    }
+
+    private fun buildFileInfo(file: MultipartFile, folder: String): SimpleFileInfo {
+        val filename = StringUtils.cleanPath(file.originalFilename!!)
+        if (file.isEmpty) {
+            throw StorageException("the_file_can_not_be_empty", null, arrayOf(filename))
+        }
+        val extension = getExtensionOfFile(file)
+
+        return SimpleFileInfo(file.inputStream, folder, extension)
+    }
+
+    private fun buildFileInfo(url: URL, folder: String): SimpleFileInfo {
+        try {
+            val connection = url.openConnection()
+            val contentType = connection.contentType
+            val extension = getExtensionFromContentType(contentType)
+            val stream = connection.getInputStream()
+            return SimpleFileInfo(stream, folder, extension)
+        } catch (e: Exception) {
+            throw StorageException("can_not_connect_to_url", null, arrayOf(url.toString()))
+        }
+    }
+
+    private fun buildFileInfo(byteArray: ByteArray, folder: String): SimpleFileInfo {
+        val stream = ByteArrayInputStream(byteArray)
+        val contentType = URLConnection.guessContentTypeFromStream(stream)
+        val extension = getExtensionFromContentType(contentType)
+
+        return SimpleFileInfo(stream, folder, extension)
     }
 }

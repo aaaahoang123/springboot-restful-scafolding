@@ -10,28 +10,28 @@ fun <T> initSpec(): Specification<T> {
 }
 
 fun <T> hasStatus(activeStatus: Int = CommonStatus.ACTIVE): Specification<T> {
-    return Specification { root, _, criteriaBuilder ->
-        criteriaBuilder.equal(root.get<Any>("status"), activeStatus)
-    }
+    return WhereSpecification("status", WhereOperator.EQUALS, activeStatus)
+}
+
+fun <EntityType, IdType> hasId(id: IdType): Specification<EntityType> {
+    return WhereSpecification("id", WhereOperator.EQUALS, id as Any)
 }
 
 fun <Root> fetchRelation(relationName: String): Specification<Root> {
-    return fetchRelations(listOf(relationName))
+    return fetchRelations(relationName)
 }
 
-fun <Root> fetchRelations(relationNames: List<String>): Specification<Root> {
+fun <Root> fetchRelations(vararg relationNames: String): Specification<Root> {
     return Specification { root, query, criteriaBuilder ->
         if (query.resultType != java.lang.Long::class.java && query.resultType != java.lang.Long::class.javaPrimitiveType) {
             query.distinct(true)
             for (relation in relationNames) {
                 val relationAsList = relation.split(".")
-                var index = 0
-                var prevRoot: Fetch<Root, Any>? = null
-                do {
-                    val r = relationAsList[index]
-                    prevRoot = prevRoot?.fetch(r, JoinType.LEFT) ?: root.fetch(r, JoinType.LEFT)
-                    index++
-                } while (index < relationAsList.size)
+                var prevRoot: From<Any, Any>? = null
+                for (r in relationAsList) {
+                    val source = ((prevRoot ?: root) as From<Any, Any>)
+                    prevRoot = (source.fetches.find { it.attribute.name == r } ?: source.fetch<Any, Any>(r, JoinType.LEFT)) as From<Any, Any>
+                }
             }
         }
         criteriaBuilder.conjunction()
@@ -58,18 +58,19 @@ fun <T> orderBy(field: String, orderByType: OrderByType = OrderByType.ASC): Spec
 }
 
 fun <T> orderBy(orderByOptions: Map<String, OrderByType>): Specification<T> {
-    return Specification<T> { root, query, criteriaBuilder ->
-        val orders = mutableListOf<Order>()
-
-        orderByOptions.entries.forEach {
-            val path = root.get<Any>(it.key)
-            orders.add(if (it.value == OrderByType.ASC) {
-                criteriaBuilder.asc(path)
-            } else {
-                criteriaBuilder.desc(path)
-            })
+    return Specification { root, query, criteriaBuilder ->
+        if (query.resultType != java.lang.Long::class.java && query.resultType != java.lang.Long::class.javaPrimitiveType) {
+            val orders = mutableListOf<Order>()
+            orderByOptions.entries.forEach {
+                val path = buildPath(root as From<Any, Any>, it.key)
+                orders.add(if (it.value == OrderByType.ASC) {
+                    criteriaBuilder.asc(path)
+                } else {
+                    criteriaBuilder.desc(path)
+                })
+            }
+            query.orderBy(orders)
         }
-        query.orderBy(orders)
         null
     }
 }
@@ -79,7 +80,7 @@ fun <RootType, RelationType> whereHas(
         cb: ((relation: Join<RootType, RelationType>, subQuery: Subquery<Long>, criteriaBuilder: CriteriaBuilder) -> Predicate)? = null,
         quantity: Int = 1
 ): Specification<RootType> {
-    return Specification {root, query, criteriaBuilder ->
+    return Specification { root, query, criteriaBuilder ->
         whereHasHandler<RootType, RootType, RelationType>(root, query, criteriaBuilder, relation, cb, quantity)
     }
 }
@@ -94,7 +95,7 @@ fun <RootType, RelationType> whereHas(
  * @param cb: The callback to make addition query on the relation
  * @param quantity: We can check condition for whereHasQuery, if quantity == 1, we check exist, else we check count of query.
  */
-fun <HigherRoot, RootType, RelationType>whereHasHandler(
+fun <HigherRoot, RootType, RelationType> whereHasHandler(
         root: From<HigherRoot, RootType>,
         query: AbstractQuery<*>,
         criteriaBuilder: CriteriaBuilder,
@@ -123,4 +124,19 @@ fun <HigherRoot, RootType, RelationType>whereHasHandler(
         subQuery.select(criteriaBuilder.count(join))
         criteriaBuilder.greaterThanOrEqualTo(subQuery, quantity.toLong())
     }
+}
+
+private fun buildPath(root: From<Any, Any>, rawPath: String): Path<Any> {
+    val extractedPath = rawPath.split(".")
+
+    var result = root
+
+    for (i in 0..(extractedPath.size-2)) {
+        result = (
+                result.fetches?.find { it.attribute.name == extractedPath[i] }
+                        ?: result.fetch<Any, Any>(extractedPath[i], JoinType.LEFT)
+                ) as From<Any, Any>
+    }
+
+    return result.get(extractedPath.last())
 }
