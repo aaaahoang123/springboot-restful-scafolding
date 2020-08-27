@@ -1,4 +1,4 @@
-package vn.amit.common.constraint
+package vn.amit.common.constraint.contract
 
 enum class NotNullIfFieldOperator {
     EQUALS,

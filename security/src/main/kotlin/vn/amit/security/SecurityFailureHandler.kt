@@ -8,6 +8,8 @@ import org.springframework.security.core.AuthenticationException
 import org.springframework.security.web.authentication.AuthenticationFailureHandler
 import org.springframework.stereotype.Component
 import vn.amit.common.language.LocaleService
+import java.io.IOException
+import javax.servlet.ServletException
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
@@ -15,10 +17,12 @@ import javax.servlet.http.HttpServletResponse
 class SecurityFailureHandler @Autowired constructor(
         private val localeService: LocaleService
 ) : AuthenticationFailureHandler {
+    private val mapper = ObjectMapper()
+
+    @Throws(exceptionClasses = [IOException::class, ServletException::class])
     override fun onAuthenticationFailure(request: HttpServletRequest, response: HttpServletResponse, exception: AuthenticationException) {
         response.setHeader(HttpHeaders.CONTENT_TYPE, request.getHeader(HttpHeaders.ACCEPT) ?: "application/json")
         response.status = HttpStatus.UNAUTHORIZED.value()
-        val mapper = ObjectMapper()
         response.writer.println(mapper.writeValueAsString(mapOf(
                 "status" to 0,
                 "message" to if (exception.message != null) localeService.getMessage(exception.message!!) else "Failed",

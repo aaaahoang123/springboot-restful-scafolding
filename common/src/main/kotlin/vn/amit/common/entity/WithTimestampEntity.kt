@@ -8,11 +8,11 @@ import javax.persistence.MappedSuperclass
 
 @MappedSuperclass
 abstract class WithTimestampEntity {
-    @Column(updatable = false, columnDefinition = "datetime")
+    @Column(updatable = false, columnDefinition = "timestamp null")
     @CreationTimestamp
-    open var createdDate: LocalDateTime? = null
+    open var createdAt: LocalDateTime? = null
 
-    @Column(columnDefinition = "datetime")
+    @Column(columnDefinition = "timestamp null")
     @UpdateTimestamp
-    open var updatedDate: LocalDateTime? = null
+    open var updatedAt: LocalDateTime? = null
 }

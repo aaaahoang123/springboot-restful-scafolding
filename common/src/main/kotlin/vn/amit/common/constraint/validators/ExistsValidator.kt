@@ -1,10 +1,9 @@
-package vn.amit.common.constraint
+package vn.amit.common.constraint.validators
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationContext
+import vn.amit.common.constraint.Exists
 import vn.amit.common.repository.BaseRepository
-import vn.amit.common.specification.WhereSpecification
-import vn.amit.common.specification.WhereOperator
 import javax.validation.ConstraintValidator
 import javax.validation.ConstraintValidatorContext
 

@@ -1,8 +1,10 @@
-package vn.amit.common.constraint
+package vn.amit.common.constraint.validators
 
 import org.hibernate.validator.constraintvalidation.HibernateConstraintValidatorContext
 import org.springframework.context.annotation.Scope
 import org.springframework.stereotype.Component
+import vn.amit.common.constraint.NotNullIfField
+import vn.amit.common.constraint.contract.NotNullIfFieldOperator
 import vn.amit.common.constraint.contract.ValidateClassConstrainValidator
 import javax.validation.ConstraintValidatorContext
 import kotlin.reflect.full.memberProperties

@@ -1,5 +1,6 @@
-package vn.amit.common.constraint
+package vn.amit.common.constraint.validators
 
+import vn.amit.common.constraint.ValueOfEnum
 import javax.validation.ConstraintValidator
 import javax.validation.ConstraintValidatorContext
 import kotlin.reflect.KClass

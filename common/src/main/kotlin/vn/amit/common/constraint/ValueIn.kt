@@ -1,5 +1,6 @@
 package vn.amit.common.constraint
 
+import vn.amit.common.constraint.validators.ValueInValidator
 import javax.validation.Constraint
 import javax.validation.Payload
 import kotlin.reflect.KClass

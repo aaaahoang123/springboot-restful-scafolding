@@ -1,5 +1,6 @@
 package vn.amit.common.constraint
 
+import vn.amit.common.constraint.validators.ExistsValidator
 import vn.amit.common.repository.BaseRepository
 import javax.validation.Constraint
 import javax.validation.Payload

@@ -1,8 +1,9 @@
-package vn.amit.common.constraint
+package vn.amit.common.constraint.validators
 
 import org.hibernate.validator.constraintvalidation.HibernateConstraintValidatorContext
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationContext
+import vn.amit.common.constraint.ValidateClass
 import vn.amit.common.constraint.contract.ValidateClassConstrainValidator
 import javax.validation.Constraint
 import javax.validation.ConstraintValidator
