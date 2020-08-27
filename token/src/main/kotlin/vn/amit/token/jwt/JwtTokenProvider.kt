@@ -8,10 +8,8 @@ import vn.amit.token.TokenEncoder
 @Configuration
 @ConfigurationProperties(prefix = "vn.amit.token.jwt")
 class JwtTokenProvider {
-//    @Value("\${vn.amit.token.jwt.secret:VBBghy7q2qssSVg9rIL9l1T0cPkfaDkqeLNr2AwPJxWrd7rosUWuFFPMCat1CpKY}")
-    lateinit var secret: String
-//    @Value("\${vn.amit.token.jwt.ttl:604800000}")
-    var ttl: Long = 0
+    var secret: String = "VBBghy7q2qssSVg9rIL9l1T0cPkfaDkqeLNr2AwPJxWrd7rosUWuFFPMCat1CpKY"
+    var ttl: Long = 604800000
 
     @Bean
     fun tokenEncoder(): TokenEncoder {

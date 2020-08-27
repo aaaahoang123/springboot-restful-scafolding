@@ -6,7 +6,6 @@ import vn.amit.token.TokenSubject
 import java.util.*
 import javax.xml.bind.DatatypeConverter
 
-
 class JwtTokenEncoder(
         secret: String,
         private val ttl: Long
@@ -34,6 +33,6 @@ class JwtTokenEncoder(
                 .setSigningKey(apiKeySecretByte)
                 .parseClaimsJws(token)
                 .body
-                .id
+                .subject
     }
 }

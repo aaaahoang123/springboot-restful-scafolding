@@ -1,7 +1,11 @@
 package vn.amit.security
 
+import org.springframework.beans.BeansException
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.context.ApplicationContext
+import org.springframework.context.MessageSource
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.support.ReloadableResourceBundleMessageSource
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.builders.WebSecurity
@@ -20,8 +24,23 @@ class RestSecurityConfig @Autowired constructor(
     private val entryPoint: RestSecurityEntryPoint,
     private val accessDeniedHandler: CustomAccessDeniedHandler,
     private val failureHandler: SecurityFailureHandler,
-    private val securityProperties: SecurityProperties
+    applicationContext: ApplicationContext,
+    messageSource: MessageSource
 ) : WebSecurityConfigurerAdapter() {
+    // Implement the SecurityProperties interface as a bean to override the default config
+    private val securityProperties = try {
+        applicationContext.getBean(SecurityProperties::class.java)
+    } catch (e: BeansException) {
+        applicationContext.autowireCapableBeanFactory.createBean(SimpleSecurityProperties::class.java)
+    }
+
+    init {
+        this.applicationContext = applicationContext
+
+        if (messageSource is ReloadableResourceBundleMessageSource) {
+            messageSource.addBasenames("classpath:locale/security")
+        }
+    }
 
     override fun configure(http: HttpSecurity) {
         http.sessionManagement()
@@ -50,18 +69,6 @@ class RestSecurityConfig @Autowired constructor(
                     )
                 }
 
-//        return filter
-//        http
-//            .authenticationProvider(provider)
-//            .addFilterBefore(
-//                TokenAuthenticationFilter(AntPathRequestMatcher("/**"), authenticationManager(), authService),
-//                AnonymousAuthenticationFilter::class.java
-//            )
-
-//            .addFilterBefore(
-//                TokenAuthenticationFilter(AntPathRequestMatcher("$API_PREFIX/admin/**"), authenticationManager(), authService),
-//                AnonymousAuthenticationFilter::class.java
-//            )
     }
 
     override fun configure(web: WebSecurity) {

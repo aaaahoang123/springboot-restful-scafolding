@@ -22,7 +22,7 @@ class StorageServiceImpl @Autowired constructor(private val properties: StorageP
     private val folderLikeDateFormatter = "yyyy/MM/dd"
 
     private fun getDirectoryPath(vararg paths: String): Path {
-        return Paths.get(properties.staticFolder, properties.uploadPath, *paths)
+        return Paths.get(properties.storeFolder, properties.uploadPath, *paths)
     }
 
     override fun store(file: MultipartFile, rawFolder: String): String {
@@ -102,7 +102,7 @@ class StorageServiceImpl @Autowired constructor(private val properties: StorageP
     }
 
     override fun getUploadedUrl(path: String): String {
-        return "${properties.storageDomain}${properties.uploadPath}/$path"
+        return "${properties.serveDomain}${properties.uploadPath}/$path"
     }
 
     override fun getFullPath(path: String): String {

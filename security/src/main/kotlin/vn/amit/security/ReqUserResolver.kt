@@ -5,6 +5,7 @@ import org.springframework.web.bind.support.WebDataBinderFactory
 import org.springframework.web.context.request.NativeWebRequest
 import org.springframework.web.method.support.ModelAndViewContainer
 import org.springframework.core.MethodParameter
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.method.support.HandlerMethodArgumentResolver
 
 
@@ -19,9 +20,8 @@ class ReqUserResolver : HandlerMethodArgumentResolver {
             methodParameter: MethodParameter,
             modelAndViewContainer: ModelAndViewContainer?,
             nativeWebRequest: NativeWebRequest,
-            webDataBinderFactory: WebDataBinderFactory?): Any? {
-
-        val request = nativeWebRequest.nativeRequest as HttpServletRequest
-        return request.getAttribute(USER_ATTR_NAME)
+            webDataBinderFactory: WebDataBinderFactory?
+    ): Any? {
+        return SecurityContextHolder.getContext().authentication.principal
     }
 }

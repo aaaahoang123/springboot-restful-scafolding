@@ -20,7 +20,6 @@ open class User(
 
         @Column(nullable = false, columnDefinition = "tinyint default ${UserStatus.ACTIVE}")
         open var status: Int = UserStatus.ACTIVE
-
 ) : WithTimestampEntity(), UserDetails, TokenSubject {
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -63,7 +62,7 @@ open class User(
         }
 
         override fun getTokenIdentifier(): String {
-                return id.toString()
+                return username!!
         }
 
         override fun getCustomClaims(): MutableMap<String, Any> {

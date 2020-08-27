@@ -1,0 +1,16 @@
+{
+  "properties": [
+    {
+      "name": "vn.amit.token.jwt.secret",
+      "type": "java.lang.String",
+      "sourceType": "vn.amit.token.jwt.JwtTokenProvider",
+      "description": "Secret key for JwtTokenEncoder."
+    },
+    {
+      "name": "vn.amit.token.jwt.ttl",
+      "type": "java.lang.Long",
+      "sourceType": "vn.amit.token.jwt.JwtTokenProvider",
+      "description": "Time to life of jwt tokens, value in milliseconds."
+    }
+  ]
+}
