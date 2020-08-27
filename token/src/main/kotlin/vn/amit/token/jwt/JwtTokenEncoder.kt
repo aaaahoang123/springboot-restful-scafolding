@@ -18,11 +18,11 @@ class JwtTokenEncoder(
 
         // Tạo chuỗi json web token từ id của user.
         return Jwts.builder()
+                .setClaims(subject.getCustomClaims().toMutableMap())
                 .setId(subject.getTokenIdentifier())
                 .setSubject(subject.getTokenIdentifier())
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
-                .addClaims(subject.getCustomClaims())
                 .signWith(SignatureAlgorithm.HS512, apiKeySecretByte)
                 .compact()
     }
