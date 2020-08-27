@@ -1,0 +1,28 @@
+{
+  "properties": [
+    {
+      "name": "vn.amit.cors.domains",
+      "type": "java.lang.String",
+      "sourceType": "vn.amit.common.cors.CORSConfiguration",
+      "description": "The domains for CORS configuration."
+    },
+    {
+      "name": "vn.amit.storage.store-folder",
+      "type": "java.lang.String",
+      "sourceType": "vn.amit.common.storage.StorageProperties",
+      "description": "The folder of to store the uploaded content. Place in the same folder with source code or archive file."
+    },
+    {
+      "name": "vn.amit.storage.upload-path",
+      "type": "java.lang.String",
+      "sourceType": "vn.amit.common.storage.StorageProperties",
+      "description": "The base path of static content."
+    },
+    {
+      "name": "vn.amit.storage.serve-domain",
+      "type": "java.lang.String",
+      "sourceType": "vn.amit.common.storage.StorageProperties",
+      "description": "The domain to build full url of static content."
+    }
+  ]
+}

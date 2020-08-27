@@ -1,9 +1,5 @@
 plugins {
-//    kotlin("jvm")
-//    kotlin("plugin.jpa")
-//    id("org.springframework.boot")
     id("org.springframework.boot")
-
     kotlin("jvm")
     kotlin("plugin.spring")
 }
@@ -14,7 +10,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.apache.commons:commons-text:1.8")
+    implementation("commons-codec:commons-codec:1.14")
     implementation("org.springframework.boot:spring-boot-starter-validation")
+    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 }
 
 tasks.getByName<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {

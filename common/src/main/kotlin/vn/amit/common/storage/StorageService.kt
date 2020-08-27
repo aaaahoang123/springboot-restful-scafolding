@@ -8,18 +8,18 @@ import java.util.stream.Stream
 
 interface StorageService {
 
-    fun init(folder: String)
+    fun resolveFolder(rawFolder: String): String
 
-//    fun store(file: MultipartFile): String
+    fun store(file: MultipartFile, rawFolder: String = ""): String
 
-    fun store(file: MultipartFile, folder: String = ""): String
-
-    fun loadAll(): Stream<Path>
-
-    fun load(filename: String): Path
-
-    fun loadAsResource(filename: String): Resource
+    fun store(source: String, rawFolder: String): String
 
     fun deleteAll()
+
+    fun remove(path: String)
+
+    fun getUploadedUrl(path: String): String
+
+    fun getFullPath(path: String): String
 
 }

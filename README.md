@@ -43,7 +43,7 @@ Spring Boot multiple modules template
 - Create an ModuleBoot.kts class with the code like a main class of spring app.
 
 ----
-    package vn.amit.auth // or your package
+    package vn.amit.springboot // or your package
     
     import org.springframework.boot.autoconfigure.SpringBootApplication
     import org.springframework.boot.autoconfigure.domain.EntityScan
@@ -53,7 +53,7 @@ Spring Boot multiple modules template
     @SpringBootApplication
     // scan the common package to take the common component like:
     // exception handler, restful body advice, language header interceptor,...
-    @ComponentScan(basePackages = ["vn.amit.common", "vn.amit.auth"])
+    @ComponentScan(basePackages = ["vn.amit.common", "vn.amit.springboot"])
     // Scan the entity package
     @EntityScan(basePackages = ["vn.amit.entity.auth"])
     class AuthenticationServiceApplication
