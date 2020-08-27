@@ -16,7 +16,8 @@ import javax.servlet.http.HttpServletResponse
 class TokenAuthenticationFilter(
         requestMatcher: RequestMatcher,
         manager: AuthenticationManager,
-        failureHandler: AuthenticationFailureHandler
+        failureHandler: AuthenticationFailureHandler,
+        private val userDetailService: TokenUserDetailService
 ): AbstractAuthenticationProcessingFilter(requestMatcher) {
     init {
         authenticationManager = manager
@@ -29,8 +30,17 @@ class TokenAuthenticationFilter(
             throw BadCredentialsException("token_is_not_a_bearer_token")
         }
         token = token.replace("Bearer ", "")
-
-        return authenticationManager.authenticate(UsernamePasswordAuthenticationToken(token, null))
+        return try {
+            val username = userDetailService.retrieveUsernameByToken(token)
+            val user = userDetailService.loadUserByUsername(username)
+            UsernamePasswordAuthenticationToken(user, null, user.authorities)
+        } catch (e: Exception) {
+            if (logger.isDebugEnabled) {
+                logger.debug("Resolve the token: $token failed, reason: " + e.message)
+            }
+            throw BadCredentialsException("wrong_authentication_info")
+        }
+//        return authenticationManager.authenticate(UsernamePasswordAuthenticationToken(token, null))
     }
 
     override fun successfulAuthentication(request: HttpServletRequest, response: HttpServletResponse, chain: FilterChain, authResult: Authentication) {

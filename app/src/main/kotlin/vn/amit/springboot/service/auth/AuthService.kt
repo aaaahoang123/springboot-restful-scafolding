@@ -1,11 +1,10 @@
-package vn.amit.springboot.service
+package vn.amit.springboot.service.auth
 
-import org.springframework.security.core.userdetails.UserDetailsService
 import vn.amit.entity.auth.User
 import vn.amit.springboot.request.LoginRequest
 import vn.amit.springboot.request.RegisterRequest
 
-interface UserService : UserDetailsService {
+interface AuthService {
     fun register(req: RegisterRequest): User
     fun login(req: LoginRequest): User
 }

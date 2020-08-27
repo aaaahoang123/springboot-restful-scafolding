@@ -11,14 +11,4 @@ class SecurityDependenciesConfig {
     fun passwordEncoder(): PasswordEncoder {
         return BCryptPasswordEncoder()
     }
-
-//    @Bean
-//    fun authenticationProvider(): AuthenticationProvider {
-//        return TokenAuthenticationProvider()
-//    }
-
-//    @Bean
-//    fun authenticationFailureHandler(): AuthenticationFailureHandler {
-//        return SecurityFailureHandler()
-//    }
 }

@@ -65,7 +65,7 @@ open class User(
                 return username!!
         }
 
-        override fun getCustomClaims(): MutableMap<String, Any> {
-                return mutableMapOf()
+        override fun getCustomClaims(): Map<String, Any> {
+                return mapOf()
         }
 }

@@ -13,7 +13,7 @@ interface TokenSubject {
      *
      * @return Map<String, Any>
      */
-    fun getCustomClaims(): MutableMap<String, Any> {
-        return mutableMapOf()
+    fun getCustomClaims(): Map<String, Any> {
+        return mapOf()
     }
 }

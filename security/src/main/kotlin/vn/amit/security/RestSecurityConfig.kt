@@ -2,16 +2,20 @@ package vn.amit.security
 
 import org.springframework.beans.BeansException
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.ApplicationContext
 import org.springframework.context.MessageSource
+import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.support.ReloadableResourceBundleMessageSource
+import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.builders.WebSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter
 import org.springframework.security.config.http.SessionCreationPolicy
+import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher
 import org.springframework.transaction.annotation.EnableTransactionManagement
@@ -21,11 +25,12 @@ import org.springframework.transaction.annotation.EnableTransactionManagement
 @EnableTransactionManagement(proxyTargetClass=true)
 @EnableGlobalMethodSecurity(jsr250Enabled = true, securedEnabled = true)
 class RestSecurityConfig @Autowired constructor(
-    private val entryPoint: RestSecurityEntryPoint,
-    private val accessDeniedHandler: CustomAccessDeniedHandler,
-    private val failureHandler: SecurityFailureHandler,
-    applicationContext: ApplicationContext,
-    messageSource: MessageSource
+        private val entryPoint: RestSecurityEntryPoint,
+        private val accessDeniedHandler: CustomAccessDeniedHandler,
+        private val failureHandler: SecurityFailureHandler,
+        applicationContext: ApplicationContext,
+        messageSource: MessageSource,
+        private val userDetailsService: TokenUserDetailService
 ) : WebSecurityConfigurerAdapter() {
     // Implement the SecurityProperties interface as a bean to override the default config
     private val securityProperties = try {
@@ -40,6 +45,11 @@ class RestSecurityConfig @Autowired constructor(
         if (messageSource is ReloadableResourceBundleMessageSource) {
             messageSource.addBasenames("classpath:locale/security")
         }
+    }
+
+    @Bean
+    override fun authenticationManagerBean(): AuthenticationManager {
+        return super.authenticationManagerBean()
     }
 
     override fun configure(http: HttpSecurity) {
@@ -64,7 +74,7 @@ class RestSecurityConfig @Autowired constructor(
         securityProperties.getAuthenticatedResources()
                 .forEach {
                     http.addFilterBefore(
-                            TokenAuthenticationFilter(AntPathRequestMatcher(it), authenticationManager(), failureHandler),
+                            TokenAuthenticationFilter(AntPathRequestMatcher(it), authenticationManager(), failureHandler, userDetailsService),
                             AnonymousAuthenticationFilter::class.java
                     )
                 }
