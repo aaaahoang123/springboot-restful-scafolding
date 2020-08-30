@@ -8,10 +8,12 @@ import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter
 import org.springframework.security.web.authentication.AuthenticationFailureHandler
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource
 import org.springframework.security.web.util.matcher.RequestMatcher
 import javax.servlet.FilterChain
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
+import kotlin.reflect.jvm.jvmName
 
 class TokenAuthenticationFilter(
         requestMatcher: RequestMatcher,
@@ -19,6 +21,7 @@ class TokenAuthenticationFilter(
         failureHandler: AuthenticationFailureHandler,
         private val userDetailService: TokenUserDetailService
 ): AbstractAuthenticationProcessingFilter(requestMatcher) {
+    private val webDetailSource = WebAuthenticationDetailsSource()
     init {
         authenticationManager = manager
         setAuthenticationFailureHandler(failureHandler)
@@ -33,14 +36,13 @@ class TokenAuthenticationFilter(
         return try {
             val username = userDetailService.retrieveUsernameByToken(token)
             val user = userDetailService.loadUserByUsername(username)
-            UsernamePasswordAuthenticationToken(user, null, user.authorities)
+            val authentication = UsernamePasswordAuthenticationToken(user, null, user.authorities)
+            authentication.details = webDetailSource.buildDetails(request)
+            authentication
         } catch (e: Exception) {
-            if (logger.isDebugEnabled) {
-                logger.debug("Resolve the token: $token failed, reason: " + e.message)
-            }
+            logger.warn("Resolve the token: $token failed, reason: ${e.message}(${e::class.jvmName})")
             throw BadCredentialsException("wrong_authentication_info")
         }
-//        return authenticationManager.authenticate(UsernamePasswordAuthenticationToken(token, null))
     }
 
     override fun successfulAuthentication(request: HttpServletRequest, response: HttpServletResponse, chain: FilterChain, authResult: Authentication) {

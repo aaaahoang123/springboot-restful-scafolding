@@ -2,8 +2,6 @@ package vn.amit.sendmail
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.core.io.ByteArrayResource
-import org.springframework.mail.MailSender
 import org.springframework.mail.SimpleMailMessage
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.MimeMessageHelper
