@@ -1,3 +1,5 @@
+import org.springframework.boot.gradle.tasks.bundling.BootJar
+
 plugins {
     id("org.springframework.boot")
     kotlin("jvm")
@@ -12,7 +14,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 }
 
-tasks.getByName<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
+tasks.getByName<BootJar>("bootJar") {
     enabled = false
 }
 
