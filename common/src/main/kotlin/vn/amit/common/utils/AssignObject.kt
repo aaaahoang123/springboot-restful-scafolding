@@ -102,7 +102,7 @@ private fun tryTransformRelationProp(targetProp: KMutableProperty<*>, sourceProp
                 }
                 targetProp.setter.call(target, propInstance)
             } else {
-                val propInstance = assignObject(propJvmEnsure.createInstance(), it, getIgnoreProps(sourceValue, sourceClass))
+                val propInstance = assignObject(propJvmEnsure.createInstance(), it, getIgnoreProps(it, sourceClass))
                 targetProp.setter.call(target, propInstance)
             }
         }
@@ -110,7 +110,11 @@ private fun tryTransformRelationProp(targetProp: KMutableProperty<*>, sourceProp
 }
 
 fun getIgnoreProps(source: Any, relationClass: KClass<*>): List<String> {
+    val relationType = relationClass.createType().withNullability(false)
     return source::class.memberProperties.filter {
-        it.returnType.withNullability(false) == relationClass.createType().withNullability(false)
+        val propType =  it.returnType.withNullability(false)
+        propType == relationType
+                || propType.isSupertypeOf(relationType)
     }.map { it.name }
+
 }
